@@ -29,6 +29,7 @@ const config = {
 
 };
 
+
 // Game state
 let gameState = {
     score: 0,
