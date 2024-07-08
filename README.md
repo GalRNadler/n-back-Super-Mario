@@ -1,3 +1,7 @@
-# npm i
+To install the project, run
 
-# npm start
+### `npm i`
+
+In the project directory - to start, run:
+
+### `npm start`
