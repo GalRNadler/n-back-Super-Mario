@@ -151,7 +151,7 @@ function generateTargetMushroom() {
 }
 
 function drawTargetMushroom() {
-  if (gameState.targetMushroom) {
+  if (gameState.targetMushroom && gameState.targetMushroom.image.complete) {
     ctx.drawImage(
       gameState.targetMushroom.image,
       canvas.width / 2 - config.mushroomSize / 2,
@@ -159,7 +159,7 @@ function drawTargetMushroom() {
       config.mushroomSize,
       config.mushroomSize
     );
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
     ctx.font = '20px Arial';
     ctx.fillText('Target:', canvas.width / 2 - 60, 40);
   }
@@ -376,6 +376,9 @@ function startGame() {
   playButton.disabled = true;
   pauseButton.disabled = false;
 
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   // Move Mario away from the pipe
   setTimeout(() => {
     const moveInterval = setInterval(() => {
@@ -390,8 +393,6 @@ function startGame() {
   if (!gameState.muted) {
     backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
   }
-
-  gameState.targetMushroom = null;
 
   requestAnimationFrame(gameLoop);
 }
@@ -428,7 +429,7 @@ function initGame() {
   pauseButton.addEventListener("click", pauseGame);
   muteButton.addEventListener("click", toggleMute);
   lazyLoadBackgroundElements();
-  drawInitialScene();
+  drawInitialScene();  // Make sure this line is here
 }
 
 // Draw initial scene
@@ -483,10 +484,11 @@ function drawInitialScene() {
     config.playerSize,
     config.playerSize
   );
+
+  // Generate and draw the target mushroom
   generateTargetMushroom();
   drawTargetMushroom();
 }
-
 // Start the game when images are loaded
 // Promise.all([
 //     playerImage.onload,
