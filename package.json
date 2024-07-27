@@ -4,8 +4,7 @@
   "description": "",
   "main": "game.js",
   "scripts": {
-    "start": "live-server",
-    "start:v1": "live-server --entry-file=index_1_0.html"
+    "start": "live-server"
   },
   "keywords": [],
   "author": "",

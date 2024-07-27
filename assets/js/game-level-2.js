@@ -4,7 +4,6 @@ const scoreElement = document.getElementById("score");
 const playButton = document.getElementById("playButton");
 const pauseButton = document.getElementById("pauseButton");
 const muteButton = document.getElementById("muteButton");
-const nextLevelButton = document.getElementById("nextLevelButton");
 
 // Game configuration
 const config = {
@@ -12,7 +11,7 @@ const config = {
   // colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
   // colors: ['blue', 'green'],
   colors: ["red", "pink", "orange"],
-  gameSpeed: 6,
+  gameSpeed: 9,
   mushroomFrequency: 100,
   playerSize: 70,
   mushroomSize: 81,
