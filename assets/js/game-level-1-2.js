@@ -44,10 +44,9 @@ let gameState = {
   paused: false,
   muted: false,
 };
-let zero_back = false;
+
 let one_back = true;
-let two_back = false;
-let three_back = false;
+
 
 // Load images
 const playerImage = new Image();
@@ -322,17 +321,7 @@ function checkCollisions() {
     // Collision detected, implement correct 2-Back logic
 
     const mushroomIndex = gameState.mushroomHistory.indexOf(mushroom);
-    if (zero_back) {
-      //implement - its not correct!!!!!!!
-      const zeroBackMushroom = randomushroom; // get random and display it
-      if (zeroBackMushroom.color === randomushroom.color) {
-        gameState.score += 10;
-        console.log("Correct match! +10 points");
-      } else {
-        gameState.score -= 5;
-        console.log("Incorrect match. -5 points");
-      }
-    }
+    
     if (one_back) {
       if (mushroomIndex >= 1) {
         const oneBackMushroom = gameState.mushroomHistory[mushroomIndex - 1];
@@ -347,35 +336,7 @@ function checkCollisions() {
         gameState.score -= 5;
         console.log("Too early. -5 points");
       }
-    } else if (two_back) {
-      if (mushroomIndex >= 2) {
-        const twoBackMushroom = gameState.mushroomHistory[mushroomIndex - 2];
-        if (twoBackMushroom.color === mushroom.color) {
-          gameState.score += 10;
-          console.log("Correct match! +10 points");
-        } else {
-          gameState.score -= 5;
-          console.log("Incorrect match. -5 points");
-        }
-      } else {
-        gameState.score -= 5;
-        console.log("Too early. -5 points");
-      }
-    } else if (three_back) {
-      if (mushroomIndex >= 3) {
-        const threeBackMushroom = gameState.mushroomHistory[mushroomIndex - 3];
-        if (threeBackMushroom.color === mushroom.color) {
-          gameState.score += 10;
-          console.log("Correct match! +10 points");
-        } else {
-          gameState.score -= 5;
-          console.log("Incorrect match. -5 points");
-        }
-      } else {
-        gameState.score -= 5;
-        console.log("Too early. -5 points");
-      }
-    }
+    } 
 
     // Mark the mushroom as collected
     gameState.currentMushroom.collected = true;
