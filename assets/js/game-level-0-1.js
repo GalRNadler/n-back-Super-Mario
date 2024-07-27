@@ -54,6 +54,7 @@ const playerImage = new Image();
 playerImage.src = "assets/images/Super_Mario.png";
 const player1Image = new Image();
 player1Image.src = "assets/images/Super_Mario1.png";
+
 const mushroomImages = {};
 
 function loadMushroomImage(color) {
@@ -146,29 +147,26 @@ function updateScenery() {
 function generateTargetMushroom() {
   const colorIndex = Math.floor(Math.random() * config.colors.length);
   const color = config.colors[colorIndex];
-  gameState.targetMushroom = {
-    color: color,
-    image: loadMushroomImage(color),
-  };
+  const image = loadMushroomImage(color);
+  gameState.targetMushroom = { color, image };
   console.log("Target mushroom generated:", color);
 }
 
 function drawTargetMushroom() {
-  console.log("Drawing target mushroom:", gameState.targetMushroom);
-  if (gameState.targetMushroom && gameState.targetMushroom.image.complete) {
-    ctx.drawImage(
-      gameState.targetMushroom.image,
-      canvas.width / 2 - config.mushroomSize / 2,
-      50,
-      config.mushroomSize,
-      config.mushroomSize
-    );
-    ctx.fillStyle = 'black';
-    ctx.font = '20px Arial';
-    ctx.fillText('Target:', canvas.width / 2 - 60, 40);
-    console.log("Target mushroom drawn");
+  if (gameState.targetMushroom) {
+      ctx.drawImage(
+          gameState.targetMushroom.image,
+          canvas.width / 2 - config.mushroomSize / 2,
+          50,
+          config.mushroomSize,
+          config.mushroomSize
+      );
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      ctx.fillText('Target:', canvas.width / 2 - 60, 40);
+      console.log("Target mushroom drawn");
   } else {
-    console.log("Target mushroom not ready to draw");
+      console.log("No target mushroom to draw");
   }
 }
 
@@ -188,6 +186,7 @@ function gameLoop(timestamp) {
   updateMushrooms(timestamp);
   checkCollisions();
   updateScore();
+  drawTargetMushroom(); // Add this line
 
   requestAnimationFrame(gameLoop);
 }
@@ -374,22 +373,21 @@ function startGame() {
   gameState.score = 0;
   gameState.mushroomHistory = [];
   gameState.playerPosition = {
-    x: 50,
-    y: canvas.height - config.floorHeight - config.playerSize,
+      x: 50,
+      y: canvas.height - config.floorHeight - config.playerSize,
   };
   gameState.lastMushroomTime = 0;
   gameState.currentMushroom = null;
   playButton.disabled = true;
   pauseButton.disabled = false;
 
-  // Clear the canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Don't clear the target mushroom
+  // gameState.targetMushroom = null;
 
-  // Start the game loop immediately
   requestAnimationFrame(gameLoop);
 
   if (!gameState.muted) {
-    backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
+      backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
   }
 }
 
@@ -424,8 +422,11 @@ function initGame() {
   playButton.addEventListener("click", startGame);
   pauseButton.addEventListener("click", pauseGame);
   muteButton.addEventListener("click", toggleMute);
-  lazyLoadBackgroundElements();
-  drawInitialScene();
+  
+  preloadImages(() => {
+      console.log("All images loaded");
+      drawInitialScene();
+  });
 }
 
 // Draw initial scene
@@ -524,6 +525,39 @@ window.onload = function() {
   console.log("Window loaded, initializing game");
   initGame().catch(error => console.error("Error initializing game:", error));
 };
+
+function preloadImages(callback) {
+  const imagesToLoad = [
+      playerImage,
+      player1Image,
+      pipeImage,
+      cloudImage,
+      treeImage,
+      bushImage,
+      brickImage,
+      floorImage,
+      ...config.colors.map(color => loadMushroomImage(color))
+  ];
+
+  let loadedImages = 0;
+  imagesToLoad.forEach(img => {
+      if (img.complete) {
+          loadedImages++;
+      } else {
+          img.onload = () => {
+              loadedImages++;
+              if (loadedImages === imagesToLoad.length) {
+                  callback();
+              }
+          };
+      }
+  });
+
+  // If all images are already loaded, call the callback immediately
+  if (loadedImages === imagesToLoad.length) {
+      callback();
+  }
+}
 
 // function showLoadingScreen() {
 //     ctx.fillStyle = 'black';
