@@ -49,36 +49,35 @@ let one_back = true;
 let two_back = false;
 let three_back = false;
 
-
 // Load images
 const playerImage = new Image();
-playerImage.src = "images/Super_Mario.png";
+playerImage.src = "assets/images/Super_Mario.png";
 const player1Image = new Image();
-player1Image.src = "images/Super_Mario1.png";
+player1Image.src = "assets/images/Super_Mario1.png";
 const mushroomImages = {};
 function loadMushroomImage(color) {
   if (!mushroomImages[color]) {
     mushroomImages[color] = new Image();
-    mushroomImages[color].src = `images/${color}_mushroom.png`;
+    mushroomImages[color].src = `assets/images/${color}_mushroom.png`;
   }
   return mushroomImages[color];
 }
 const pipeImage = new Image();
-pipeImage.src = "images/green_pipe.png";
+pipeImage.src = "assets/images/green_pipe.png";
 
 const cloudImage = new Image();
-cloudImage.src = "images/cloud.png";
+cloudImage.src = "assets/images/cloud.png";
 
 const treeImage = new Image();
-treeImage.src = "images/tree.png";
+treeImage.src = "assets/images/tree.png";
 
 const bushImage = new Image();
-bushImage.src = "images/bush.png";
+bushImage.src = "assets/images/bush.png";
 
 const brickImage = new Image();
-brickImage.src = "images/brick.png";
+brickImage.src = "assets/images/brick.png";
 const floorImage = new Image();
-floorImage.src = "images/floor_tile.png";
+floorImage.src = "assets/images/floor_tile.png";
 let floorX = 0;
 
 const clouds = Array(config.cloudCount)
@@ -143,7 +142,7 @@ function updateScenery() {
 }
 
 // Load music
-const backgroundMusic = new Audio("sounds/super_mario_theme.mp3");
+const backgroundMusic = new Audio("assets/sounds/super_mario_theme.mp3");
 backgroundMusic.loop = true;
 
 // Game loop
@@ -321,9 +320,9 @@ function checkCollisions() {
     player.y + player.height > mushroom.y
   ) {
     // Collision detected, implement correct 2-Back logic
-    
+
     const mushroomIndex = gameState.mushroomHistory.indexOf(mushroom);
-    if (zero_back){
+    if (zero_back) {
       //implement - its not correct!!!!!!!
       const zeroBackMushroom = randomushroom; // get random and display it
       if (zeroBackMushroom.color === randomushroom.color) {
@@ -334,7 +333,7 @@ function checkCollisions() {
         console.log("Incorrect match. -5 points");
       }
     }
-    if (one_back){
+    if (one_back) {
       if (mushroomIndex >= 1) {
         const oneBackMushroom = gameState.mushroomHistory[mushroomIndex - 1];
         if (oneBackMushroom.color === mushroom.color) {
@@ -348,8 +347,7 @@ function checkCollisions() {
         gameState.score -= 5;
         console.log("Too early. -5 points");
       }
-    }
-    else if (two_back){
+    } else if (two_back) {
       if (mushroomIndex >= 2) {
         const twoBackMushroom = gameState.mushroomHistory[mushroomIndex - 2];
         if (twoBackMushroom.color === mushroom.color) {
@@ -363,8 +361,7 @@ function checkCollisions() {
         gameState.score -= 5;
         console.log("Too early. -5 points");
       }
-    }
-    else if (three_back){
+    } else if (three_back) {
       if (mushroomIndex >= 3) {
         const threeBackMushroom = gameState.mushroomHistory[mushroomIndex - 3];
         if (threeBackMushroom.color === mushroom.color) {
