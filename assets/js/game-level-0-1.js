@@ -43,9 +43,10 @@ let gameState = {
   currentMushroom: null,
   paused: false,
   muted: false,
+  targetMushroom: null,
 };
 
-let two_back = true;
+let one_back = true;
 
 
 // Load images
@@ -140,6 +141,30 @@ function updateScenery() {
   });
 }
 
+function generateTargetMushroom() {
+  const colorIndex = Math.floor(Math.random() * config.colors.length);
+  const color = config.colors[colorIndex];
+  gameState.targetMushroom = {
+    color: color,
+    image: loadMushroomImage(color),
+  };
+}
+
+function drawTargetMushroom() {
+  if (gameState.targetMushroom) {
+    ctx.drawImage(
+      gameState.targetMushroom.image,
+      canvas.width / 2 - config.mushroomSize / 2,
+      50,
+      config.mushroomSize,
+      config.mushroomSize
+    );
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText('Target:', canvas.width / 2 - 60, 40);
+  }
+}
+
 // Load music
 const backgroundMusic = new Audio("assets/sounds/super_mario_theme.mp3");
 backgroundMusic.loop = true;
@@ -156,7 +181,7 @@ function gameLoop(timestamp) {
   updateMushrooms(timestamp);
   checkCollisions();
   updateScore();
-  // debugGameState();
+  // Remove this line: drawTargetMushroom();
   requestAnimationFrame(gameLoop);
 }
 
@@ -318,25 +343,13 @@ function checkCollisions() {
     player.y < mushroom.y + config.mushroomSize &&
     player.y + player.height > mushroom.y
   ) {
-    // Collision detected, implement correct 2-Back logic
-
-    const mushroomIndex = gameState.mushroomHistory.indexOf(mushroom);
-    
-    if (two_back) {
-      if (mushroomIndex >= 2) {
-        const twoBackMushroom = gameState.mushroomHistory[mushroomIndex - 2];
-        if (twoBackMushroom.color === mushroom.color) {
-          gameState.score += 10;
-          console.log("Correct match! +10 points");
-        } else {
-          gameState.score -= 5;
-          console.log("Incorrect match. -5 points");
-        }
-      } else {
-        gameState.score -= 5;
-        console.log("Too early. -5 points");
-      }
-    } 
+    if (mushroom.color === gameState.targetMushroom.color) {
+      gameState.score += 10;
+      console.log("Correct match! +10 points");
+    } else {
+      gameState.score -= 5;
+      console.log("Incorrect match. -5 points");
+    }
 
     // Mark the mushroom as collected
     gameState.currentMushroom.collected = true;
@@ -377,6 +390,8 @@ function startGame() {
   if (!gameState.muted) {
     backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
   }
+
+  gameState.targetMushroom = null;
 
   requestAnimationFrame(gameLoop);
 }
@@ -468,6 +483,8 @@ function drawInitialScene() {
     config.playerSize,
     config.playerSize
   );
+  generateTargetMushroom();
+  drawTargetMushroom();
 }
 
 // Start the game when images are loaded

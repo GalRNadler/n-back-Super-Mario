@@ -11,7 +11,7 @@ const config = {
   // colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
   // colors: ['blue', 'green'],
   colors: ["red", "pink", "orange"],
-  gameSpeed: 9,
+  gameSpeed: 12,
   mushroomFrequency: 100,
   playerSize: 70,
   mushroomSize: 81,
