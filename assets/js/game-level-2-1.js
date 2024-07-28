@@ -280,15 +280,14 @@ function updateMushrooms(timestamp) {
     gameState.currentMushroom.collected
   ) {
     if (timestamp - gameState.lastMushroomTime >= config.mushroomFrequency) {
-      const newMushroom = generateMushroom();
-      gameState.mushroomHistory.push(newMushroom);
-      gameState.currentMushroom = newMushroom;
-      gameState.lastMushroomTime = timestamp;
+      generateNextMushroom();
     }
   }
 
   if (gameState.currentMushroom && !gameState.currentMushroom.collected) {
-    gameState.currentMushroom.x -= config.gameSpeed;
+    if (!gameState.playerMoving) {
+      gameState.currentMushroom.x -= config.gameSpeed;
+    }
     ctx.drawImage(
       gameState.currentMushroom.image,
       gameState.currentMushroom.x,
