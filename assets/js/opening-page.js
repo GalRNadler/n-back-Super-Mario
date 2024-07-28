@@ -51,37 +51,43 @@ let gameState = {
 let one_back = true;
 
 function showOpeningPage() {
-  const openingText = `
-      Welcome to the 0-Back Mario Mushroom Game!
+  const openingText = [
+      "Welcome to the 0-Back Mario Mushroom Game!",
+      "",
+      "Rules:",
+      "1. Memorize the target mushroom shown at the start.",
+      "2. Use arrow keys to move Mario:",
+      "   - Left/Right to move horizontally",
+      "   - Up to jump",
+      "3. Collect mushrooms that match the target.",
+      "4. Correct matches: +10 points",
+      "5. Incorrect matches: -5 points",
+      "6. The target mushroom will disappear when you start the game.",
+      "",
+      "Good luck and have fun!",
+      "Press 'Next page' to start the game."
+  ];
 
-      Rules:
-      1. Memorize the target mushroom shown at the start.
-      2. Use arrow keys to move Mario:
-         - Left/Right to move horizontally
-         - Up to jump
-      3. Collect mushrooms that match the target.
-      4. Correct matches: +10 points
-      5. Incorrect matches: -5 points
-      6. The target mushroom will disappear when you start the game.
-
-      Good luck and have fun!
-
-      Press 'Play' to start the game.
-  `;
-
-  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+  ctx.font = "bold 24px Arial";
   ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
   const lineHeight = 30;
-  const lines = openingText.split('\n');
   const startY = 50;
 
-  lines.forEach((line, index) => {
-      ctx.fillText(line.trim(), 50, startY + index * lineHeight);
+  openingText.forEach((line, index) => {
+      ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
   });
+
+  // Reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 }
 
 function startGameFromOpeningPage() {
@@ -218,18 +224,23 @@ backgroundMusic.loop = true;
 
 // Game loop
 function gameLoop(timestamp) {
-  if (!gameState.gameRunning || gameState.paused) return;
-
-  if (!gameState.showingOpeningPage) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      updateBackground();
-      updateScenery();
-      updateClouds();
-      updatePlayer();
-      updateMushrooms(timestamp);
-      checkCollisions();
-      updateScore();
+  if (!gameState.gameRunning || gameState.paused) {
+      drawInitialScene();
+      if (gameState.showingOpeningPage) {
+          showOpeningPage();
+      }
+      requestAnimationFrame(gameLoop);
+      return;
   }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateBackground();
+  updateScenery();
+  updateClouds();
+  updatePlayer();
+  updateMushrooms(timestamp);
+  checkCollisions();
+  updateScore();
 
   requestAnimationFrame(gameLoop);
 }
@@ -420,9 +431,11 @@ function startGame() {
       y: canvas.height - config.floorHeight - config.playerSize,
   };
   gameState.lastMushroomTime = 0;
-  gameState.currentMushroom = null;
-  playButton.disabled = true;
-  pauseButton.disabled = false;
+    gameState.currentMushroom = null;
+    gameState.showingOpeningPage = false;
+    gameState.targetMushroom.visible = false; // Hide the target mushroom
+    playButton.disabled = true;
+    pauseButton.disabled = false;
 
   // Don't clear the target mushroom
   // gameState.targetMushroom = null;
@@ -529,8 +542,8 @@ function drawInitialScene() {
   );
 
   console.log("Generating target mushroom");
-  generateTargetMushroom();
-  drawTargetMushroom();
+  // generateTargetMushroom();
+  // drawTargetMushroom();
 }
 // Start the game when images are loaded
 // Promise.all([
