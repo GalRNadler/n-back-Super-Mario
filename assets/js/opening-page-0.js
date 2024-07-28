@@ -50,52 +50,76 @@ let gameState = {
 
 let one_back = true;
 
+const font = new FontFace('Super Mario 256', 'url(assets/fonts/SuperMario256.ttf)');
+const font2 = new FontFace('Highway Gothic', 'url(assets/fonts/HWYGNRRW.ttf)');
+
+Promise.all([font.load(), font2.load()])
+    .then(function(loadedFonts) {
+        loadedFonts.forEach(font => document.fonts.add(font));
+        console.log("All fonts loaded successfully");
+        initGame();
+    })
+    .catch(function(error) {
+        console.error('Font loading failed:', error);
+        // Initialize game with fallback fonts
+        initGame();
+    });
+
 function showOpeningPage() {
   const openingText = [
-      "Welcome to the 0-Back Mario Mushroom Game!",
+      "Welcome to the n-Back Mario Mushroom Game!",
       "",
+      "0-back",
       "Rules:",
       "1. Memorize the target mushroom shown at the start.",
       "2. Use arrow keys to move Mario:",
-      "   - Left/Right to move horizontally",
-      "   - Up to jump",
+      "   - Right to collect the mushroom",
+      "   - Up to jump (avoid mushroom if needed)",
       "3. Collect mushrooms that match the target.",
       "4. Correct matches: +10 points",
       "5. Incorrect matches: -5 points",
       "6. The target mushroom will disappear when you start the game.",
       "",
       "Good luck and have fun!",
-      "Press 'Next page' to start the game."
+      "Press 'Next level' to start the game."
   ];
 
-  ctx.font = "bold 24px Arial";
-  ctx.fillStyle = "white";
-  ctx.textAlign = "center";
-  ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetX = 2;
-  ctx.shadowOffsetY = 2;
+  ctx.textAlign = 'center';
+    
+    let yPosition = 30; // Starting Y position
 
-  const lineHeight = 30;
-  const startY = 50;
-
-  openingText.forEach((line, index) => {
-      ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
-  });
-
-  // Reset shadow
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-}
-
-function startGameFromOpeningPage() {
-  if (gameState.showingOpeningPage) {
-      gameState.showingOpeningPage = false;
-      startGame();
+    openingText.forEach((line, index) => {
+        if (index === 0) { // Title
+            ctx.font = '24px "Super Mario 256", Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText(line, canvas.width / 2, yPosition);
+            yPosition += 40;
+        } else if (index === 2) { // "1-back" text
+            ctx.font = '48px "Super Mario 256", Arial';
+            ctx.fillStyle = '#FBD000'; // Mario yellow color
+            ctx.fillText(line, canvas.width / 2, yPosition);
+            yPosition += 60; // Larger gap after "1-back"
+        } else if (index === 3) { // "1-back" text
+            ctx.font = '38px "Super Mario 256", Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText(line, canvas.width / 2, yPosition);
+            yPosition += 30; // Larger gap after "1-back"
+        } 
+          else {
+            ctx.font = '24px "Highway Gothic", Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText(line, canvas.width / 2, yPosition);
+            yPosition += 20;
+        }
+    });
   }
-}
+  function startGameFromOpeningPage() {
+    if (gameState.showingOpeningPage) {
+        gameState.showingOpeningPage = false;
+        startGame();
+    }
+  }
+
 //____________________________________________//
 // Load images
 const playerImage = new Image();
