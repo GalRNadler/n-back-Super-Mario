@@ -44,11 +44,53 @@ let gameState = {
   paused: false,
   muted: false,
   targetMushroom: null,
+  showingOpeningPage: true,
+
 };
 
 let one_back = true;
 
+function showOpeningPage() {
+  const openingText = `
+      Welcome to the 0-Back Mario Mushroom Game!
 
+      Rules:
+      1. Memorize the target mushroom shown at the start.
+      2. Use arrow keys to move Mario:
+         - Left/Right to move horizontally
+         - Up to jump
+      3. Collect mushrooms that match the target.
+      4. Correct matches: +10 points
+      5. Incorrect matches: -5 points
+      6. The target mushroom will disappear when you start the game.
+
+      Good luck and have fun!
+
+      Press 'Play' to start the game.
+  `;
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  
+  const lineHeight = 30;
+  const lines = openingText.split('\n');
+  const startY = 50;
+
+  lines.forEach((line, index) => {
+      ctx.fillText(line.trim(), 50, startY + index * lineHeight);
+  });
+}
+
+function startGameFromOpeningPage() {
+  if (gameState.showingOpeningPage) {
+      gameState.showingOpeningPage = false;
+      startGame();
+  }
+}
+//____________________________________________//
 // Load images
 const playerImage = new Image();
 playerImage.src = "assets/images/Super_Mario.png";
@@ -178,15 +220,16 @@ backgroundMusic.loop = true;
 function gameLoop(timestamp) {
   if (!gameState.gameRunning || gameState.paused) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  updateBackground();
-  updateScenery();
-  updateClouds();
-  updatePlayer();
-  updateMushrooms(timestamp);
-  checkCollisions();
-  updateScore();
-  drawTargetMushroom(); // Add this line
+  if (!gameState.showingOpeningPage) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      updateBackground();
+      updateScenery();
+      updateClouds();
+      updatePlayer();
+      updateMushrooms(timestamp);
+      checkCollisions();
+      updateScore();
+  }
 
   requestAnimationFrame(gameLoop);
 }
@@ -419,13 +462,15 @@ function toggleMute() {
 // Main game initialization
 function initGame() {
   document.addEventListener("keydown", handleInput);
-  playButton.addEventListener("click", startGame);
+  playButton.addEventListener("click", startGameFromOpeningPage);
   pauseButton.addEventListener("click", pauseGame);
   muteButton.addEventListener("click", toggleMute);
   
   preloadImages(() => {
       console.log("All images loaded");
+      generateTargetMushroom();
       drawInitialScene();
+      showOpeningPage();
   });
 }
 
