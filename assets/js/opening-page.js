@@ -11,7 +11,7 @@ const config = {
   // colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
   // colors: ['blue', 'green'],
   colors: ["red", "pink", "orange"],
-  gameSpeed: 9,
+  gameSpeed: 7,
   mushroomFrequency: 100,
   playerSize: 70,
   mushroomSize: 81,
@@ -43,26 +43,10 @@ let gameState = {
   currentMushroom: null,
   paused: false,
   muted: false,
-  movingToMushroom: false,  
-  targetX: 0, 
-  returningToStart: false,
-  startX: 25,
-  startY: canvas.height - config.floorHeight - config.playerSize,
-  jumpingToMushroom: false,
-  jumpProgress: 0,
-  jumpStartX: 0,
-  jumpStartY: 0,
-  jumpTargetX: 0,
-  jumpTargetY: 0,
-  mushroomHistory: [],
-  mushroomsAppeared: 0,
-  lastScoredMushroomIndex: -1,
-  score: 0,
-  returningToStart: false,
-  
+  targetMushroom: null,
 };
 
-let two_back = true;
+let one_back = true;
 
 
 // Load images
@@ -70,11 +54,14 @@ const playerImage = new Image();
 playerImage.src = "assets/images/Super_Mario.png";
 const player1Image = new Image();
 player1Image.src = "assets/images/Super_Mario1.png";
+
 const mushroomImages = {};
+
 function loadMushroomImage(color) {
   if (!mushroomImages[color]) {
     mushroomImages[color] = new Image();
     mushroomImages[color].src = `assets/images/${color}_mushroom.png`;
+    console.log(`Loading mushroom image: ${mushroomImages[color].src}`);
   }
   return mushroomImages[color];
 }
@@ -157,6 +144,32 @@ function updateScenery() {
   });
 }
 
+function generateTargetMushroom() {
+  const colorIndex = Math.floor(Math.random() * config.colors.length);
+  const color = config.colors[colorIndex];
+  const image = loadMushroomImage(color);
+  gameState.targetMushroom = { color, image };
+  console.log("Target mushroom generated:", color);
+}
+
+function drawTargetMushroom() {
+  if (gameState.targetMushroom) {
+      ctx.drawImage(
+          gameState.targetMushroom.image,
+          canvas.width / 2 - config.mushroomSize / 2,
+          50,
+          config.mushroomSize,
+          config.mushroomSize
+      );
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      ctx.fillText('Target:', canvas.width / 2 - 60, 40);
+      console.log("Target mushroom drawn");
+  } else {
+      console.log("No target mushroom to draw");
+  }
+}
+
 // Load music
 const backgroundMusic = new Audio("assets/sounds/super_mario_theme.mp3");
 backgroundMusic.loop = true;
@@ -171,9 +184,10 @@ function gameLoop(timestamp) {
   updateClouds();
   updatePlayer();
   updateMushrooms(timestamp);
-  limitMushroomHistory();
   checkCollisions();
   updateScore();
+  drawTargetMushroom(); // Add this line
+
   requestAnimationFrame(gameLoop);
 }
 
@@ -244,60 +258,18 @@ function handleInput(event) {
 
   if (event.key === "ArrowLeft" && gameState.playerPosition.x > 20) {
     gameState.playerPosition.x -= 5;
-  } else if (event.key === "ArrowRight") {
-    moveToMushroom();
+  } else if (
+    event.key === "ArrowRight" &&
+    gameState.playerPosition.x < canvas.width - config.playerSize
+  ) {
+    gameState.playerPosition.x += 5;
   } else if (event.key === "ArrowUp" && !gameState.jumping) {
     gameState.jumping = true;
     gameState.jumpVelocity = -Math.sqrt(2 * 0.8 * config.jumpHeight);
   }
 }
 
-// updatePlayer function
 function updatePlayer() {
-  if (gameState.jumpingToMushroom) {
-    gameState.jumpProgress += 0.05; // Adjust this value to change jump speed
-
-    if (gameState.jumpProgress >= 1) {
-      gameState.jumpingToMushroom = false;
-      gameState.playerPosition.x = gameState.jumpTargetX;
-      gameState.playerPosition.y = gameState.jumpTargetY;
-      collectMushroom();
-      returnToStart();
-    } else {
-      // Parabolic jump motion
-      const jumpHeight = 100; // Adjust this value to change jump height
-      gameState.playerPosition.x = lerp(gameState.jumpStartX, gameState.jumpTargetX, gameState.jumpProgress);
-      gameState.playerPosition.y = lerp(gameState.jumpStartY, gameState.jumpTargetY, gameState.jumpProgress) 
-                                   - Math.sin(gameState.jumpProgress * Math.PI) * jumpHeight;
-    }
-  } else if (gameState.returningToStart) {
-    const moveSpeed = 7; // Slowed down return speed
-    
-    // Horizontal movement
-    if (gameState.playerPosition.x > gameState.startX) {
-      gameState.playerPosition.x -= moveSpeed;
-    } else {
-      gameState.playerPosition.x = gameState.startX;
-    }
-    
-    // Vertical movement
-    if (gameState.playerPosition.y < gameState.startY) {
-      gameState.playerPosition.y += moveSpeed;
-    } else {
-      gameState.playerPosition.y = gameState.startY;
-    }
-    
-    // Check if Mario has returned to the start position
-    if (Math.abs(gameState.playerPosition.x - gameState.startX) < moveSpeed && 
-        Math.abs(gameState.playerPosition.y - gameState.startY) < moveSpeed) {
-      gameState.playerPosition.x = gameState.startX;
-      gameState.playerPosition.y = gameState.startY;
-      gameState.returningToStart = false;
-      gameState.currentMushroom = null;
-      gameState.lastMushroomTime = performance.now();
-    }
-  }
-
   if (gameState.jumping) {
     gameState.playerPosition.y += gameState.jumpVelocity;
     gameState.jumpVelocity += 0.8;
@@ -308,7 +280,6 @@ function updatePlayer() {
       gameState.jumpVelocity = 0;
     }
   }
-
   ctx.drawImage(
     playerImage,
     gameState.playerPosition.x,
@@ -318,26 +289,35 @@ function updatePlayer() {
   );
 }
 
+// Mushroom generation and update
+function generateMushroom() {
+  const colorIndex = Math.floor(Math.random() * config.colors.length);
+  const color = config.colors[colorIndex];
+  const minY = canvas.height - config.maxMushroomHeight - config.floorHeight;
+  const maxY = canvas.height - config.floorHeight - config.mushroomSize;
+  return {
+    x: canvas.width,
+    y: Math.random() * (maxY - minY) + minY,
+    color: color,
+    image: loadMushroomImage(color),
+    collected: false,
+  };
+}
+
 function updateMushrooms(timestamp) {
-  if ((!gameState.currentMushroom || 
-       gameState.currentMushroom.x + config.mushroomSize < 0 || 
-       gameState.currentMushroom.collected) && 
-      !gameState.returningToStart) {
-    
-    // Generate a new mushroom
-    gameState.currentMushroom = generateMushroom();
-    gameState.lastMushroomTime = timestamp;
-    
-    // Add the new mushroom to history immediately
-    gameState.mushroomHistory.push({
-      color: gameState.currentMushroom.color,
-      collected: false
-    });
+  if (
+    !gameState.currentMushroom ||
+    gameState.currentMushroom.x + config.mushroomSize < 0 ||
+    gameState.currentMushroom.collected
+  ) {
+    if (timestamp - gameState.lastMushroomTime >= config.mushroomFrequency) {
+      gameState.currentMushroom = generateMushroom();
+      gameState.lastMushroomTime = timestamp;
+    }
   }
 
   if (gameState.currentMushroom && !gameState.currentMushroom.collected) {
     gameState.currentMushroom.x -= config.gameSpeed;
-    
     ctx.drawImage(
       gameState.currentMushroom.image,
       gameState.currentMushroom.x,
@@ -367,8 +347,16 @@ function checkCollisions() {
     player.y < mushroom.y + config.mushroomSize &&
     player.y + player.height > mushroom.y
   ) {
-    // Collision detected, call collectMushroom
-    collectMushroom();
+    if (mushroom.color === gameState.targetMushroom.color) {
+      gameState.score += 10;
+      console.log("Correct match! +10 points");
+    } else {
+      gameState.score -= 5;
+      console.log("Incorrect match. -5 points");
+    }
+
+    // Mark the mushroom as collected
+    gameState.currentMushroom.collected = true;
   }
 }
 
@@ -379,36 +367,28 @@ function updateScore() {
 
 // Start game
 function startGame() {
+  console.log("Starting game");
   gameState.gameRunning = true;
   gameState.paused = false;
   gameState.score = 0;
-  gameState.mushroomsAppeared = 0;
   gameState.mushroomHistory = [];
   gameState.playerPosition = {
-    x: 50,
-    y: canvas.height - config.floorHeight - config.playerSize,
+      x: 50,
+      y: canvas.height - config.floorHeight - config.playerSize,
   };
   gameState.lastMushroomTime = 0;
   gameState.currentMushroom = null;
   playButton.disabled = true;
   pauseButton.disabled = false;
 
-  // Move Mario away from the pipe
-  setTimeout(() => {
-    const moveInterval = setInterval(() => {
-      gameState.playerPosition.x += 2;
-      if (gameState.playerPosition.x >= 50) {
-        // Move to x position 150
-        clearInterval(moveInterval);
-      }
-    }, 20);
-  }, 800); // Wait 1 second before moving
-
-  if (!gameState.muted) {
-    backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
-  }
+  // Don't clear the target mushroom
+  // gameState.targetMushroom = null;
 
   requestAnimationFrame(gameLoop);
+
+  if (!gameState.muted) {
+      backgroundMusic.play().catch((e) => console.log("Audio play failed:", e));
+  }
 }
 
 // Pause game
@@ -442,12 +422,16 @@ function initGame() {
   playButton.addEventListener("click", startGame);
   pauseButton.addEventListener("click", pauseGame);
   muteButton.addEventListener("click", toggleMute);
-  lazyLoadBackgroundElements();
-  drawInitialScene();
+  
+  preloadImages(() => {
+      console.log("All images loaded");
+      drawInitialScene();
+  });
 }
 
 // Draw initial scene
 function drawInitialScene() {
+  console.log("Drawing initial scene");
   ctx.fillStyle = "#619FFC";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -498,8 +482,11 @@ function drawInitialScene() {
     config.playerSize,
     config.playerSize
   );
-}
 
+  console.log("Generating target mushroom");
+  generateTargetMushroom();
+  drawTargetMushroom();
+}
 // Start the game when images are loaded
 // Promise.all([
 //     playerImage.onload,
@@ -534,110 +521,51 @@ function lazyLoadBackgroundElements() {
     }
   });
 }
+window.onload = function() {
+  console.log("Window loaded, initializing game");
+  initGame().catch(error => console.error("Error initializing game:", error));
+};
 
-// moveToMushroom function
-function moveToMushroom() {
-  if (gameState.currentMushroom && !gameState.currentMushroom.collected && !gameState.returningToStart) {
-    gameState.jumpingToMushroom = true;
-    gameState.jumpProgress = 0;
-    gameState.jumpStartX = gameState.playerPosition.x;
-    gameState.jumpStartY = gameState.playerPosition.y;
-    gameState.jumpTargetX = gameState.currentMushroom.x - config.playerSize / 2;
-    gameState.jumpTargetY = gameState.currentMushroom.y + config.mushroomSize - config.playerSize;
-  }
-}
+function preloadImages(callback) {
+  const imagesToLoad = [
+      playerImage,
+      player1Image,
+      pipeImage,
+      cloudImage,
+      treeImage,
+      bushImage,
+      brickImage,
+      floorImage,
+      ...config.colors.map(color => loadMushroomImage(color))
+  ];
 
-function returnToStart() {
-  gameState.returningToStart = true;
-  gameState.startX = 25; // Or whatever X position you want Mario to return to
-  gameState.startY = canvas.height - config.floorHeight - config.playerSize;
-}
-
-// collectMushroom function
-function collectMushroom() {
-  if (gameState.currentMushroom && !gameState.currentMushroom.collected) {
-    const currentIndex = gameState.mushroomHistory.length - 1;
-    
-    if (two_back) {
-      if (currentIndex >= 2) {
-        const twoBackMushroom = gameState.mushroomHistory[currentIndex - 2];
-        if (twoBackMushroom.color === gameState.currentMushroom.color) {
-          gameState.score += 10;
-          console.log(`Correct match! +10 points (Current: ${currentIndex + 1}, Matched: ${currentIndex - 1})`);
-        } else {
-          gameState.score -= 5;
-          console.log(`Incorrect match. -5 points (Current: ${currentIndex + 1}, Compared: ${currentIndex - 1})`);
-        }
+  let loadedImages = 0;
+  imagesToLoad.forEach(img => {
+      if (img.complete) {
+          loadedImages++;
       } else {
-        gameState.score -= 5;
-        console.log(`Too early. -5 points (Current: ${currentIndex + 1})`);
+          img.onload = () => {
+              loadedImages++;
+              if (loadedImages === imagesToLoad.length) {
+                  callback();
+              }
+          };
       }
-    }
+  });
 
-    gameState.currentMushroom.collected = true;
-    gameState.mushroomHistory[currentIndex].collected = true;
-    updateScore();
-    gameState.returningToStart = true;
-    returnToStart();
+  // If all images are already loaded, call the callback immediately
+  if (loadedImages === imagesToLoad.length) {
+      callback();
   }
 }
 
-function generateMushroom() {
-  const colorIndex = Math.floor(Math.random() * config.colors.length);
-  const color = config.colors[colorIndex];
-  const minY = canvas.height - config.maxMushroomHeight - config.floorHeight;
-  const maxY = canvas.height - config.floorHeight - config.mushroomSize;
-  return {
-    x: canvas.width,
-    y: Math.random() * (maxY - minY) + minY,
-    color: color,
-    image: loadMushroomImage(color),
-    collected: false
-  };
-}
+// function showLoadingScreen() {
+//     ctx.fillStyle = 'black';
+//     ctx.fillRect(0, 0, canvas.width, canvas.height);
+//     ctx.fillStyle = 'white';
+//     ctx.font = '30px Arial';
+//     ctx.fillText('Loading...', canvas.width/2 - 50, canvas.height/2);
+// }
 
-function lerp(start, end, t) {
-  return start * (1 - t) + end * t;
-}
-
-function limitMushroomHistory() {
-  const maxHistorySize = 20; // Adjust as needed
-  if (gameState.mushroomHistory.length > maxHistorySize) {
-    gameState.mushroomHistory = gameState.mushroomHistory.slice(-maxHistorySize);
-  }
-}
-
-function returnToStart() {
-  gameState.returningToStart = true;
-  const moveSpeed = 7; // Adjusted for smoother movement
-  
-  function moveStep() {
-    // Horizontal movement
-    if (gameState.playerPosition.x > gameState.startX) {
-      gameState.playerPosition.x -= moveSpeed;
-    } else {
-      gameState.playerPosition.x = gameState.startX;
-    }
-    
-    // Vertical movement
-    if (gameState.playerPosition.y < gameState.startY) {
-      gameState.playerPosition.y += moveSpeed;
-    } else {
-      gameState.playerPosition.y = gameState.startY;
-    }
-    
-    // Check if Mario has returned to the start position
-    if (Math.abs(gameState.playerPosition.x - gameState.startX) < moveSpeed && 
-        Math.abs(gameState.playerPosition.y - gameState.startY) < moveSpeed) {
-      gameState.playerPosition.x = gameState.startX;
-      gameState.playerPosition.y = gameState.startY;
-      gameState.returningToStart = false;
-      gameState.currentMushroom = null;
-      gameState.lastMushroomTime = performance.now();
-    } else {
-      requestAnimationFrame(moveStep);
-    }
-  }
-  
-  moveStep();
-}
+// Call this before loading assets
+// showLoadingScreen();
