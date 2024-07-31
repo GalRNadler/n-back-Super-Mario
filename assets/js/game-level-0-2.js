@@ -8,10 +8,10 @@ const muteButton = document.getElementById("muteButton");
 // Game configuration
 const config = {
   // nBack: 2,
-  // colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
-  colors: ['blue', 'green'],
+  colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
+  // colors: ['blue', 'green'],
   // colors: ["red", "pink", "orange"],
-  gameSpeed: 12,
+  gameSpeed: 10,
   mushroomFrequency: 100,
   playerSize: 70,
   mushroomSize: 81,
@@ -61,6 +61,8 @@ let gameState = {
   returningToStart: false,
   targetMushroom: null,
   targetShown: true,
+  levelTime: 60000,
+  levelTimeUp: false,
   
 };
 
@@ -166,8 +168,9 @@ function generateTargetMushroom() {
   const colorIndex = Math.floor(Math.random() * config.colors.length);
   const color = config.colors[colorIndex];
   const image = loadMushroomImage(color);
+  
   gameState.targetMushroom = { color, image };
-  console.log("Target mushroom generated:", color);
+  
 }
 
 function drawTargetMushroom() {
@@ -193,6 +196,10 @@ backgroundMusic.loop = true;
 function gameLoop(timestamp) {
   if (!gameState.gameRunning || gameState.paused) return;
 
+  const elapsedTime = timestamp - gameState.levelStartTime;
+  if (elapsedTime >= gameState.levelTime && !gameState.levelTimeUp) {
+    gameState.levelTimeUp = true;
+  }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   updateBackground();
   updateScenery();
@@ -205,6 +212,10 @@ function gameLoop(timestamp) {
   drawTargetMushroom();
   requestAnimationFrame(gameLoop);
   // logExpectedHistory();
+  if (gameState.levelTimeUp && !gameState.currentMushroom) {
+    completeLevel();
+    return;
+  }
 }
 
 // Background
@@ -349,21 +360,21 @@ function updatePlayer() {
 }
 
 const MUSHROOM_COOLDOWN = 500;
-
+let cnt = 0;
 function updateMushrooms(timestamp) {
-  if ((gameState.currentMushroom === null || 
+  if ((!gameState.levelTimeUp && gameState.currentMushroom === null || 
       gameState.currentMushroom.x + config.mushroomSize < 0 || 
       gameState.currentMushroom.collected) && 
      !gameState.returningToStart &&
      timestamp - gameState.lastMushroomTime > MUSHROOM_COOLDOWN) {
-    
+    cnt++;
+    console.log(cnt)
     gameState.currentMushroom = generateMushroom();
     gameState.lastMushroomTime = timestamp;
   }
 
   if (gameState.currentMushroom && !gameState.currentMushroom.collected) {
     gameState.currentMushroom.x -= config.gameSpeed;
-    
     ctx.drawImage(
       gameState.currentMushroom.image,
       gameState.currentMushroom.x,
@@ -419,6 +430,7 @@ function startGame() {
   gameState.targetShown = false;
   playButton.disabled = true;
   pauseButton.disabled = false;
+  gameState.levelStartTime = performance.now();
 
   // Move Mario away from the pipe
   setTimeout(() => {
@@ -533,19 +545,6 @@ function drawInitialScene() {
   drawTargetMushroom();
 }
 
-// Start the game when images are loaded
-// Promise.all([
-//     playerImage.onload,
-//     pipeImage.onload,
-//     ...mushroomImages.map(img => img.onload),
-//     treeImage.onload,
-//     // bushImage.onload,
-//     // brickImage.onload,
-//     floorImage.onload
-// ]).then(() => {
-//     initGame();
-// });
-
 function debugGameState() {
   console.log(
     "Mushroom History:",
@@ -579,12 +578,6 @@ function moveToMushroom() {
     gameState.jumpTargetY = gameState.currentMushroom.y + config.mushroomSize - config.playerSize;
   }
 }
-
-// function returnToStart() {
-//   gameState.returningToStart = true;
-//   gameState.startX = 25; // Or whatever X position you want Mario to return to
-//   gameState.startY = canvas.height - config.floorHeight - config.playerSize;
-// }
 
 // collectMushroom function
 function collectMushroom() {
@@ -623,12 +616,6 @@ function lerp(start, end, t) {
   return start * (1 - t) + end * t;
 }
 
-// function limitMushroomHistory() {
-//   const maxHistorySize = 20; // Adjust as needed
-//   if (gameState.mushroomHistory.length > maxHistorySize) {
-//     gameState.mushroomHistory = gameState.mushroomHistory.slice(-maxHistorySize);
-//   }
-// }
 
 function returnToStart() {
   gameState.returningToStart = true;
@@ -703,14 +690,18 @@ window.onload = function() {
   initGame();
 };
 
-// function logExpectedHistory() {
-//   const visibleMushrooms = [];
-//   let x = canvas.width;
-//   while (x > 0) {
-//     const colorIndex = Math.floor(Math.random() * config.colors.length);
-//     const color = config.colors[colorIndex];
-//     visibleMushrooms.unshift(color);
-//     x -= (config.mushroomSize + 50); // Assuming some space between mushrooms
-//   }
-//   console.log("Expected mushroom history (based on screen):", visibleMushrooms);
-// 
+function completeLevel() {
+  gameState.gameRunning = false;
+  gameState.paused = true;
+  console.log("Level completed! Final score:", gameState.score);
+
+  // Automatically press the 'Next Level' button
+  const nextLevelButton = document.getElementById("nextLevelButton");
+  if (nextLevelButton) {
+    setTimeout(() => {
+      nextLevelButton.click();
+    }, 1000); // Wait 1 second before clicking the button
+  } else {
+    console.error("Next Level button not found");
+  }
+}
