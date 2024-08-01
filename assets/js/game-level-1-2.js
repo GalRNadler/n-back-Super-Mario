@@ -177,10 +177,13 @@ function gameLoop(timestamp) {
   updateMushrooms(timestamp);
   checkCollisions();
   updateScore();
-  if (gameState.levelTimeUp && !gameState.currentMushroom) {
-    completeLevel();
-    return;
+  if (gameState.levelTimeUp) {
+    if (!gameState.currentMushroom || gameState.currentMushroom.x + config.mushroomSize < 0) {
+      completeLevel();
+      return;
+    }
   }
+
   requestAnimationFrame(gameLoop);
   
 }
@@ -680,7 +683,7 @@ function completeLevel() {
   if (nextLevelButton) {
     setTimeout(() => {
       nextLevelButton.click();
-    }, 1000); // Wait 1 second before clicking the button
+    }, 200); // Wait 1 second before clicking the button
   } else {
     console.error("Next Level button not found");
   }

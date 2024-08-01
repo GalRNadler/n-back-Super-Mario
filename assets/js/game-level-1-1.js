@@ -63,7 +63,7 @@ let gameState = {
   levelTimeUp: false,
 };
 
-let n_back = 1;
+let one_back = true;
 
 
 // Load images
@@ -177,10 +177,13 @@ function gameLoop(timestamp) {
   updateMushrooms(timestamp);
   checkCollisions();
   updateScore();
-  if (gameState.levelTimeUp && !gameState.currentMushroom) {
-    completeLevel();
-    return;
+  if (gameState.levelTimeUp) {
+    if (!gameState.currentMushroom || gameState.currentMushroom.x + config.mushroomSize < 0) {
+      completeLevel();
+      return;
+    }
   }
+
   requestAnimationFrame(gameLoop);
   
 }
@@ -585,21 +588,21 @@ function collectMushroom() {
     console.log("Collecting mushroom:", gameState.currentMushroom.color);
     console.log("Current mushroom history:", gameState.mushroomHistory.map(m => m.color));
     
-    
-    if (currentIndex >= 1) {
-      const oneBackMushroom = gameState.mushroomHistory[currentIndex - 1];
-      if (oneBackMushroom.color === gameState.currentMushroom.color) {
-        gameState.score += 10;
-        console.log(`Correct match! +10 points (Current: ${currentIndex + 1}, Matched: ${currentIndex})`);
+    if (one_back) {
+      if (currentIndex >= 1) {
+        const oneBackMushroom = gameState.mushroomHistory[currentIndex - 1];
+        if (oneBackMushroom.color === gameState.currentMushroom.color) {
+          gameState.score += 10;
+          console.log(`Correct match! +10 points (Current: ${currentIndex + 1}, Matched: ${currentIndex})`);
+        } else {
+          gameState.score -= 5;
+          console.log(`Incorrect match. -5 points (Current: ${currentIndex + 1}, Compared: ${currentIndex})`);
+        }
       } else {
         gameState.score -= 5;
-        console.log(`Incorrect match. -5 points (Current: ${currentIndex + 1}, Compared: ${currentIndex})`);
+        console.log(`Too early. -5 points (Current: ${currentIndex + 1})`);
       }
-    } else {
-      gameState.score -= 5;
-      console.log(`Too early. -5 points (Current: ${currentIndex + 1})`);
     }
-
 
     gameState.currentMushroom.collected = true;
     gameState.mushroomHistory[currentIndex].collected = true;
@@ -680,7 +683,7 @@ function completeLevel() {
   if (nextLevelButton) {
     setTimeout(() => {
       nextLevelButton.click();
-    }, 1000); // Wait 1 second before clicking the button
+    }, 200); // Wait 1 second before clicking the button
   } else {
     console.error("Next Level button not found");
   }
