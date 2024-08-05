@@ -8,9 +8,9 @@ const muteButton = document.getElementById("muteButton");
 // Game configuration
 const config = {
   // nBack: 2,
-  colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
+  // colors: ['red', 'green', 'yellow' , 'blue', 'pink','orange'],
   // colors: ['blue', 'green'],
-  // colors: ["red", "pink", "orange"],
+  colors: ["red", "pink", "orange" , "gray"],
   gameSpeed: 10,
   mushroomFrequency: 100,
   playerSize: 70,
@@ -586,8 +586,8 @@ function collectMushroom() {
     console.log("Current mushroom history:", gameState.mushroomHistory.map(m => m.color));
     
     if (two_back) {
-      if (currentIndex >= 1) {
-        const twoBackMushroom = gameState.mushroomHistory[currentIndex - 1];
+      if (currentIndex >= 2) {
+        const twoBackMushroom = gameState.mushroomHistory[currentIndex - 2];
         if (twoBackMushroom.color === gameState.currentMushroom.color) {
           gameState.score += 10;
           console.log(`Correct match! +10 points (Current: ${currentIndex + 1}, Matched: ${currentIndex})`);

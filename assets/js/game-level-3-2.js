@@ -586,8 +586,8 @@ function collectMushroom() {
     console.log("Current mushroom history:", gameState.mushroomHistory.map(m => m.color));
     
     if (three_back) {
-      if (currentIndex >= 1) {
-        const threebackMushroom = gameState.mushroomHistory[currentIndex - 1];
+      if (currentIndex >= 3) {
+        const threebackMushroom = gameState.mushroomHistory[currentIndex - 3];
         if (threebackMushroom.color === gameState.currentMushroom.color) {
           gameState.score += 10;
           console.log(`Correct match! +10 points (Current: ${currentIndex + 1}, Matched: ${currentIndex})`);
